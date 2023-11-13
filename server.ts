@@ -30,13 +30,21 @@ app.get("/", (req, res) => {
     });
   })
 
+  app.get("/map", (req, res) => {
+    res.render("main", {
+      layout: "index",
+      mapPage: true,
+    });
+  })
+
   app.get("*", (req, res) => {
     res.render("main");
   })
 
   app.use(express.static("public")); 
-const s = app.listen(PORT, () => {
-    console.log(`server at: http://localhost:${PORT}`);
+
+  const s = app.listen(PORT, () => {
+  console.log(`server at: http://localhost:${PORT}`);
 })
 
 const io = new Server(s);

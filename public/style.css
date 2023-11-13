@@ -1,0 +1,12 @@
+.bg-image {
+    /* Укажите свой путь к изображению фона или используйте цвет */
+    background: url('https://img.goodfon.ru/wallpaper/big/2/8b/karty-poker-fishki.jpg') no-repeat center center;
+    background-size: cover;
+    background-color: aqua;
+}
+
+body, html {
+    height: 100%;
+    margin: 0;
+}
+ 

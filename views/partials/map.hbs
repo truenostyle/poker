@@ -1,0 +1,66 @@
+<div class="container-fluid text-center bg-image-map">
+    <div class="d-flex justify-content-center">
+        <div class="position-absolute" style="top: 10%; left: 20%;">
+        <a href="/level1">
+            <img src="https://w7.pngwing.com/pngs/654/834/png-transparent-framing-architectural-engineering-building-project-house-building-building-framing-material-thumbnail.png" alt="Уровень 1" style="width: 100px; height: 100px;">
+        </a>
+        <div style="text-align: center; color: black;">Уровень 1</div>
+    </div>
+
+    <div class="position-absolute" style="top: 50%; left: 40%;">
+        <a href="/level2">
+            <img src="https://w7.pngwing.com/pngs/654/834/png-transparent-framing-architectural-engineering-building-project-house-building-building-framing-material-thumbnail.png" alt="Уровень 2" style="width: 100px; height: 100px;">
+        </a>
+        <div style="text-align: center; color: black;">Уровень 2</div>
+    </div>
+
+    <div class="position-absolute" style="top: 70%; right: 30%;">
+        <a href="/level3">
+            <img src="https://w7.pngwing.com/pngs/654/834/png-transparent-framing-architectural-engineering-building-project-house-building-building-framing-material-thumbnail.png" alt="Уровень 3" style="width: 100px; height: 100px;">
+        </a>
+        <div style="text-align: center; color: black;">Уровень 3</div>
+    </div>
+    </div>
+    <img src="https://upload.wikimedia.org/wikipedia/ru/f/f6/Kirby_FL.png" alt="Moving Image" id="movingImage" style="position: absolute; width: 50px; height: 50px; left: 0; top: 0;">
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const movingImage = document.getElementById('movingImage');
+    let posX = 0;
+    let posY = 0;
+    const step = 10; // Шаг перемещения в пикселях
+
+    document.addEventListener('keydown', (event) => {
+        switch (event.key) {
+            case 'ArrowUp':
+                posY -= step;
+                break;
+            case 'ArrowDown':
+                posY += step;
+                break;
+            case 'ArrowLeft':
+                posX -= step;
+                break;
+            case 'ArrowRight':
+                posX += step;
+                break;
+        }
+
+        movingImage.style.left = `${posX}px`;
+        movingImage.style.top = `${posY}px`;
+
+        checkOverlap(posX, posY);
+    });
+});
+
+function checkOverlap(x, y) {
+    const links = document.querySelectorAll('.container-fluid a');
+    links.forEach(link => {
+        const rect = link.getBoundingClientRect();
+        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+            window.location.href = link.href;
+        }
+    });
+}
+</script>
