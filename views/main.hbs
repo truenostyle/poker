@@ -15,15 +15,13 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-    const link = document.querySelector('a[href="/map"]');
-    link.addEventListener('click', function(event) {
-        // Выполнить необходимые действия перед переходом
-        document.querySelector('.container-fluid').style.display = 'none';
-
-        // Перенаправить на страницу /map
-        window.location.href = '/map';
+        const link = document.querySelector('a[href="/map"]');
+        link.addEventListener('click', function(event) {
+            event.preventDefault(); // Предотвратить переход по ссылке
+            document.querySelector('.container-fluid').style.display = 'none';
+            // Здесь может быть код для перехода на другую страницу или другое действие
+        });
     });
-});
 </script>
 
 <div class="main">
