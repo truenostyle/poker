@@ -34,6 +34,7 @@ app.get("/", (req, res) => {
     res.render("main", {
       layout: "index",
       mapPage: true,
+      mainPage: false
     });
   })
 
@@ -48,12 +49,25 @@ app.get("/", (req, res) => {
 })
 
 const io = new Server(s);
-
 io.on("connection", (socket) => {
-    console.log("new user");
 
-    socket.on("disconnect", () => {
-        console.log("user disconnect");
-    })
-})
+  // Обработчик события для установки никнейма
+  socket.on("setNickname", (nickname) => {
+      console.log(`User ${socket.id} set nickname: ${nickname}`);
+
+      socket.emit("nicknameSetConfirmation", { success: true, message: `Никнейм "${nickname}" успешно установлен.` });
+
+      console.log(nickname + " connected");
+  });
+  
+  // Обработчик события для отправки сообщения
+  socket.on("sendMessage", (data) => {
+      const { message, nickname } = data;
+      io.emit("receiveMessage", { message, nickname });
+  });
+
+  socket.on("disconnect", () => {
+      console.log(`User ${socket.id} disconnected`);
+  });
+});
 

@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <title>Покерный клуб</title>  
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"> 
+     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         .bg-image-main {
             background: url('https://img.goodfon.ru/wallpaper/big/2/8b/karty-poker-fishki.jpg') no-repeat center center;
@@ -21,8 +25,24 @@
             background-size: cover; 
         }
     </style>
+    
 </head>
 <body>
     {{{body}}} 
+    
+    <script>    
+    const socket = io();
+
+    socket.on("connect", () => {
+    console.log("index.hbs connect");
+    
+    
+    // socket.emit("channel", ...data); инфа конкретному челу
+    // io.emit("channel", ...data); инфа всем на серве
+    // socket.broadcast.emit("channel", ...data); инфа всем кроме одного чела
+
+})
+
+socket.on("disconnect", (reason) => {})</script>
 </body>
 </html>

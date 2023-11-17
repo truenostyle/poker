@@ -1,0 +1,53 @@
+<div class="container-fluid text-center bg-image-main">
+        <div class="row justify-content-center align-items-center" style="height: 100vh;">
+            <div class="col-md-4">
+                <h2 class="text-black">Введите ваш никнейм</h2>
+                <input type="text" id="nickname" class="form-control mb-3" placeholder="Никнейм">
+                <a href="#" class="btn btn-primary" id="continue">Далее</a>
+
+                
+            </div>
+        </div>
+    </div>
+
+<script>
+     const socket = io();
+
+socket.on("connect", () => {
+    console.log("Connected to server");
+});
+
+socket.on("error", (error) => {
+    console.error("Socket error:", error);
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("continue").addEventListener("click", function (event) {
+        event.preventDefault();
+
+        var nickname = document.getElementById("nickname").value;
+        socket.emit('setNickname', nickname);
+
+        console.log("Введенный никнейм:", nickname);
+
+        window.location.href = "/map?nickname=" + encodeURIComponent(nickname);
+    });
+});
+
+
+    
+
+
+
+    /*
+
+    document.addEventListener('DOMContentLoaded', function() {
+    
+        const link = document.querySelector('a[href="/map"]');
+        link.addEventListener('click', function(event) {
+            event.preventDefault(); // Предотвратить переход по ссылке
+            document.querySelector('.container-fluid').style.display = 'none';
+            // Здесь может быть код для перехода на другую страницу или другое действие
+        });
+    });*/
+</script>

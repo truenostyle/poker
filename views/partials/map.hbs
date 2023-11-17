@@ -1,3 +1,23 @@
+<style>
+        #chat {
+    height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column; 
+}
+
+#main-chat {
+    position: absolute;
+    bottom: 0px;
+}
+
+
+#message-input {
+    margin-top: auto;
+}
+
+</style>
+
 <div class="container-fluid text-center bg-image-map">
     <div class="d-flex justify-content-center">
         <div class="position-absolute" style="top: 10%; left: 20%;">
@@ -22,9 +42,54 @@
     </div>
     </div>
     <img src="https://upload.wikimedia.org/wikipedia/ru/f/f6/Kirby_FL.png" alt="Moving Image" id="movingImage" style="position: absolute; width: 50px; height: 50px; left: 0; top: 0;">
-</div>
 
+</div>
+<div class="col-4 bg-white d-flex flex-column" id="main-chat">
+    <div id="chat" class="border p-3">
+        <div id="chat-messages" class="mb-3"></div>
+    </div>
+    <input type="text" id="message-input" class="form-control mb-2" placeholder="Введите ваше сообщение">
+    <button id="send-message" class="btn btn-primary mb-2">Отправить</button>
+</div>
+            
+
+
+    
 <script>
+// чат
+// На странице чата
+const socket = io();
+
+document.addEventListener("DOMContentLoaded", function () {
+    const messageInput = document.getElementById("message-input");
+    const sendMessageButton = document.getElementById("send-message");
+    const chatMessages = document.getElementById("chat-messages");
+
+    // Получаем никнейм из параметров URL
+    const urlSearchParams = new URLSearchParams(window.location.search);
+    const nickname = urlSearchParams.get("nickname");
+
+    sendMessageButton.addEventListener("click", function () {
+        const message = messageInput.value;
+        if (message.trim() !== "") {
+            // Отправляем сообщение и никнейм
+            socket.emit("sendMessage", { message, nickname });
+            messageInput.value = "";
+        }
+    });
+
+    socket.on("receiveMessage", function (data) {
+        const { nickname, message } = data;
+        const messageElement = document.createElement("div");
+        messageElement.textContent = `${nickname}: ${message}`;
+        chatMessages.appendChild(messageElement);
+    });
+});
+
+
+
+// остальное
+
 document.addEventListener('DOMContentLoaded', () => {
     const movingImage = document.getElementById('movingImage');
     let posX = 0;

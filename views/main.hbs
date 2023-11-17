@@ -1,30 +1,8 @@
-<div class="container-fluid text-center bg-image-main">
-        <div class="row justify-content-center align-items-center" style="height: 100vh;">
-            <div class="col-md-4">
-                <h2 class="text-black">Введите ваш никнейм</h2>
-                <input type="text" class="form-control mb-3" placeholder="Никнейм">
-                <a href="/map" class="btn btn-primary">Далее</a>
-                
-            </div>
-        </div>
-    </div>
-
-    <!-- Подключение Bootstrap JavaScript и зависимостей -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const link = document.querySelector('a[href="/map"]');
-        link.addEventListener('click', function(event) {
-            event.preventDefault(); // Предотвратить переход по ссылке
-            document.querySelector('.container-fluid').style.display = 'none';
-            // Здесь может быть код для перехода на другую страницу или другое действие
-        });
-    });
-</script>
 
 <div class="main">
+    {{#if mainPage}}
+        {{> nickname}}
+    {{/if}}
     {{#if room1Page}}
         {{> room1 }}
     {{/if}}
