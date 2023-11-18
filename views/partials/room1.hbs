@@ -9,7 +9,7 @@
 
         <div id="playerChips" class="player-chips">Фишки: 1000</div>
 <div class="button-container">
-    <input type="number" id="betAmount" placeholder="Ставка"/>
+<input type="number" id="betAmount" placeholder="Ставка" max="">
     <div class="button-row">
         <button id="callButton">Call</button>
         <button id="raiseButton">Raise</button>
@@ -21,3 +21,118 @@
         <!-- Другие элементы игры -->
 </div>
 
+
+
+
+
+
+
+
+
+
+<script> 
+
+let playerChips = 1000;
+let totalPot = 0;
+
+// Создаем колоду
+const deck = createDeck();
+
+document.getElementById('callButton').addEventListener('click', () => {
+    const betAmount = parseInt(document.getElementById('betAmount').value);
+    if (betAmount <= playerChips) {
+        playerChips -= betAmount;
+        totalPot += betAmount;
+        updateChipsDisplay();
+        // Вывод карт на стол
+        const tableCards = dealCards(deck, 3);
+        displayCards(tableCards, 'tableCards');
+    } else {
+        alert('Недостаточно фишек');
+    }
+});
+
+document.getElementById('foldButton').addEventListener('click', resetGame);
+
+
+function updateChipsDisplay() {
+    document.getElementById('playerChips').innerText = `Фишки игрока: ${playerChips}`;
+    document.getElementById('totalPot').innerText = `Общий банк: ${totalPot}`;
+    document.getElementById('betAmount').max = playerChips; // Устанавливаем максимальное значение равное количеству фишек
+
+}
+
+// Настройка начальной раздачи карт при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() { 
+    setupGame();
+}); 
+function setupGame() {
+    const deck = createDeck();
+    const playerHand = dealCards(deck, 2);
+    displayCards(playerHand, 'playerHand');
+}
+
+
+
+// Раздаем две карты игроку и отображаем их
+const playerHand = dealCards(deck, 2);
+displayCards(playerHand, 'playerHand');
+
+
+
+
+
+//ФУНКЦИИ
+// Функция для создания колоды
+function createDeck() {
+    const suits = ['черви', 'бубны', 'трефы', 'пики'];
+    const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Валет', 'Дама', 'Король', 'Туз'];
+    const deck = [];
+    for (const suit of suits) {
+        for (const rank of ranks) {
+            deck.push({ rank, suit });
+        }
+    } 
+    return shuffle(deck);
+}
+
+// Функция для перемешивания колоды
+function shuffle(deck) {
+    for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+    return deck;
+}
+
+// Функция для раздачи карт
+function dealCards(deck, count) {
+    return deck.splice(0, count);
+}
+
+// Функция для вывода карт
+function displayCards(cards, elementId) {
+    const element = document.getElementById(elementId);
+    element.innerHTML = ''; // Очистить предыдущие карты
+
+    cards.forEach(card => {
+        const cardDiv = document.createElement('div');
+        cardDiv.textContent = `${card.rank} ${card.suit}`;
+        cardDiv.style.width = '50px';
+        cardDiv.style.height = '100px';
+        element.appendChild(cardDiv);
+    });
+}
+
+// Функция для сброса и новой раздачи карт
+function resetGame() {
+    // Очищаем карты игрока
+    document.getElementById('playerHand').innerHTML = '';
+    document.getElementById('tableCards').innerHTML = '';
+    totalPot = 0;
+    updateChipsDisplay();
+
+    // Задержка перед новой раздачей карт
+    setTimeout(setupGame, 3000);
+} 
+</script>
