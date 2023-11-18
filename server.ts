@@ -90,7 +90,7 @@ async function isNicknameExists(nickname) {
   try {
     connect = await connection.getConnection();
     const [rows] = await connect.execute('SELECT * FROM users WHERE nickname = ?', [nickname]);
-    return rows.length > 0; // возвращаем true, если никнейм существует
+    return true; // возвращаем true, если никнейм существует
   } catch (err) {
     console.error('Ошибка при проверке существования ника:', err.message);
     return false;
