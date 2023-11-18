@@ -43,6 +43,8 @@ app.get("/", (req, res) => {
   })
 
   app.use(express.static("public")); 
+  app.use(express.static("photo"));
+
 
   const s = app.listen(PORT, () => {
   console.log(`server at: http://localhost:${PORT}`);

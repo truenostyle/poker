@@ -21,9 +21,81 @@
             right: 0;
             bottom: 0;
             z-index: -1; /* Расположить блок под другими элементами */
-            background: url('https://static.kinguin.net/cdn-cgi/image/w=750,q=80,fit=scale-down,f=auto/media/category/4/-/4-1024_2414.jpg') no-repeat center center;
+            background: url('/photo/map.png') no-repeat center center;
             background-size: cover; 
         }
+
+
+.poker-table {
+    position: relative;
+    height: 100vh;
+}
+
+#playerHand {
+    position: absolute;
+    bottom: 20%; /* Подогнать положение */
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex; /* Расположить карты в ряд */
+}
+
+#tableCards {
+    position: absolute;
+    bottom: 52%; /* Поднять карты выше надписи "Общий банк" */
+    left: 50%;
+    transform: translate(-50%, 50%);
+    display: flex; /* Расположить карты в ряд */
+}
+.player-chips {
+    /* Общие стили для элементов */
+}
+
+.button-container {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    display: flex;
+    flex-direction: column; /* Элементы располагаются вертикально */
+}
+
+#betAmount {
+    margin-bottom: 10px; /* Отступ между полем ввода и кнопками */
+}
+
+.button-row {
+    display: flex; /* Кнопки в строку */
+}
+
+.button-row button {
+    margin-left: 5px; /* Отступы между кнопками */
+}
+
+/* Первой кнопке отступ не нужен */
+.button-row button:first-child {
+    margin-left: 0;
+}
+
+#callButton { bottom: 10px; }
+#raiseButton { bottom: 60px; }
+#foldButton { bottom: 110px; }
+#checkButton { bottom: 160px; }
+
+/* Фишки игрока ниже центра экрана */
+#playerChips {
+    position: absolute;
+    left: 50%;
+    bottom: 30%;
+    transform: translateX(-50%);
+}
+
+/* Общий банк по центру экрана */
+#totalPot {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
     </style>
     
 </head>
@@ -43,6 +115,111 @@
 
 })
 
-socket.on("disconnect", (reason) => {})</script>
+socket.on("disconnect", (reason) => {})
+
+console.log('Тест');
+document.addEventListener('DOMContentLoaded', function() {
+        // Создаем колоду
+        const deck = createDeck();
+
+        // Раздаем две карты игроку и отображаем их
+        const playerHand = dealCards(deck, 2);
+        displayCards(playerHand, 'playerHand');
+
+        // Обработка нажатия на кнопку "Call"
+        document.getElementById('callButton').addEventListener('click', () => {
+            const tableCards = dealCards(deck, 3);
+            displayCards(tableCards, 'tableCards');
+        });
+    });
+
+let playerChips = 1000;
+let totalPot = 0;
+
+// Функция для создания колоды
+function createDeck() {
+    const suits = ['черви', 'бубны', 'трефы', 'пики'];
+    const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Валет', 'Дама', 'Король', 'Туз'];
+    const deck = [];
+    for (const suit of suits) {
+        for (const rank of ranks) {
+            deck.push({ rank, suit });
+        }
+    } 
+    return shuffle(deck);
+}
+
+// Функция для перемешивания колоды
+function shuffle(deck) {
+    for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+    return deck;
+}
+
+// Функция для раздачи карт
+function dealCards(deck, count) {
+    return deck.splice(0, count);
+}
+
+// Создаем колоду
+const deck = createDeck(); 
+
+document.getElementById('callButton').addEventListener('click', () => {
+    const betAmount = parseInt(document.getElementById('betAmount').value);
+    if (betAmount <= playerChips) {
+        playerChips -= betAmount;
+        totalPot += betAmount;
+        updateChipsDisplay();
+        // Вывод карт на стол
+        const tableCards = dealCards(deck, 3);
+        displayCards(tableCards, 'tableCards');
+    } else {
+        alert('Недостаточно фишек');
+    }
+});
+
+document.getElementById('foldButton').addEventListener('click', () => {
+    // Новая раздача
+    resetGame();
+});
+
+function updateChipsDisplay() {
+    document.getElementById('playerChips').innerText = `Фишки игрока: ${playerChips}`;
+    document.getElementById('totalPot').innerText = `Общий банк: ${totalPot}`;
+}
+
+function resetGame() {
+    // Логика для новой раздачи карт
+    deck = createDeck();
+    const playerHand = dealCards(deck, 2);
+    displayCards(playerHand, 'playerHand');
+    // Сбросить стол и обновить отображение фишек
+    document.getElementById('tableCards').innerHTML = '';
+    totalPot = 0;
+    updateChipsDisplay();
+}
+
+// Дополнительный код для вывода карт
+function displayCards(cards, elementId) {
+    const element = document.getElementById(elementId);
+    element.innerHTML = ''; // Очистить предыдущие карты
+
+    cards.forEach(card => {
+        const cardDiv = document.createElement('div');
+        cardDiv.textContent = `${card.rank} ${card.suit}`;
+        cardDiv.style.width = '50px';
+        cardDiv.style.height = '100px';
+        element.appendChild(cardDiv);
+    });
+}
+
+// Раздаем две карты игроку и отображаем их
+const playerHand = dealCards(deck, 2);
+displayCards(playerHand, 'playerHand');
+
+
+</script>
 </body>
 </html>

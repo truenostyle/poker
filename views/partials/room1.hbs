@@ -1,20 +1,23 @@
-<a href="/room2">room2 page</a>
-    <h1>Добро пожаловать в Покерное Лобби 1</h1>
 
     <div id="pokerTable" class="poker-table">
-        <div id="playerHand" class="player-hand"></div>
-        <div id="tableCards" class="table-cards"></div>
+        <!-- Место для карт на столе -->
+<div id="tableCards"></div>
+        <!-- Место для карт игрока -->
+<div id="playerHand"></div>
+
+
+
         <div id="playerChips" class="player-chips">Фишки: 1000</div>
+<div class="button-container">
+    <input type="number" id="betAmount" placeholder="Ставка"/>
+    <div class="button-row">
         <button id="callButton">Call</button>
         <button id="raiseButton">Raise</button>
         <button id="foldButton">Fold</button>
         <button id="checkButton" style="display: none;">Check</button>
-        <div id="playerChips">Фишки игрока: 1000</div>
-        <input type="number" id="betAmount" placeholder="Ставка"/>
+    </div>
+</div> 
         <div id="totalPot">Общий банк: 0</div>
         <!-- Другие элементы игры -->
+</div>
 
-
-    <!-- Контент лобби 1 -->
- <!--   <script src="main.js"></script>
-    <script src="pokerRoom/pokerRoom1.ts"></script>-->
