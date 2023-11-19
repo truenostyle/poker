@@ -8,8 +8,8 @@ import fs from 'fs';
 
 const connection = mysql.createPool({
   host: 'localhost',
-  user: 'admin', // Ваш пользователь MySQL
-  password: 'admin', // Ваш пароль MySQL
+  user: 'Trueno', // Ваш пользователь MySQL
+  password: 'Jigsaw9901', // Ваш пароль MySQL
   multipleStatements: true, // Разрешаем множественные SQL-запросы
   connectionLimit: 10, 
 });
@@ -28,7 +28,7 @@ async function initializeDatabase() {
     console.log('База данных и таблицы успешно созданы и заполнены данными.');
 
     // Закрываем соединение после инициализации
-    await connection.end();
+
   } catch (err) {
     console.error('Ошибка при инициализации базы данных:', err.message);
   }
@@ -105,7 +105,17 @@ async function isNicknameExists(nickname) {
 
 const io = new Server(s);
 io.on("connection", (socket) => {
-
+  socket.on('getChips', async (nickname) => {
+    try {
+      // Ваш код для запроса к базе данных и получения количества фишек по никнейму
+      const chips = await getChipsFromDatabase(nickname);
+      console.log("фишки" + chips);
+      // Отправляем количество фишек обратно клиенту
+      socket.emit('chipsUpdate', chips);
+    } catch (error) {
+      console.error('Ошибка при получении фишек из базы данных:', error.message);
+    }
+  });
   // Обработчик события для установки никнейма
   socket.on("setNickname", async (nickname) => {
     console.log(`User ${socket.id} set nickname: ${nickname}`);
@@ -140,3 +150,12 @@ io.on("connection", (socket) => {
   });
 });
 
+async function getChipsFromDatabase(nickname) {
+  // Ваш код для выполнения запроса к базе данных
+  // Например, использование mysql2
+  const [rows] = await connection.execute("SELECT chips FROM users WHERE nickname = '" + nickname +"'");
+  
+  // Предполагается, что у вас есть столбец 'chips' в таблице 'users'
+  // Вернем значение фишек
+  return rows.length > 0 ? rows[0].chips : 0;
+}

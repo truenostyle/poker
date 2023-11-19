@@ -148,6 +148,7 @@
 <div class="button-container">
 <input type="number" id="betAmount" placeholder="Ставка" max="">
     <div class="button-row">
+        <button id="startButton">Start</button>
         <button id="callButton">Call</button>
         <button id="raiseButton">Raise</button>
         <button id="foldButton">Fold</button>
@@ -165,10 +166,33 @@
 const suits = ['♥', '♦', '♣', '♠'];
 const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'В', 'Д', 'К', 'Т'];
 
-let players = [
-    { name: "Игрок", chips: 1000, isBot: false },
+const urlSearchParams = new URLSearchParams(window.location.search);
+const nickname = urlSearchParams.get("nickname");
+
+let playerChips;
+let players = [];
+
+const socket = io();
+
+function init() {
+  // Отправляем запрос на получение фишек
+ 
+}
+
+function initializeGame() {
+  console.log(nickname + " " + playerChips);
+
+  players = [
+    { name: nickname, chips: playerChips, isBot: false },
     { name: "Бот", chips: 2000, isBot: true }
-];
+  ];
+
+  // Дополнительная инициализация игры
+}
+
+
+
+
 let tableCardCount = 0;
 let totalPot = 0; 
 
@@ -180,10 +204,34 @@ document.getElementById('checkButton').addEventListener('click', () => {
     handlePlayerAction('check');
 });
 
- 
+document.getElementById('startButton').addEventListener('click', () => {
+    startGame();
+});
+
+function startGame() {
+    console.log("start");
+    return new Promise(resolve => {
+        
+        socket.emit('getChips', nickname);
+
+        // Ожидаем обновления фишек
+        socket.on('chipsUpdate', (chips) => {
+            playerChips = chips;
+            console.log(`Текущее количество фишек: ${playerChips}`);
+
+            // Вызываем остальной код, зависящий от playerChips
+            initializeGame();
+
+            // Решение Promise после получения фишек
+            resolve();
+        });
+    });
+}
+
 function handlePlayerAction(action) {
     if (action === 'call' || action === 'check') {
         if (action === 'call') {
+            console.log(players);
             const betAmount = parseInt(document.getElementById('betAmount').value) || 0;
             if (betAmount <= players[0].chips) {
                 players.forEach(player => player.chips -= betAmount);
@@ -241,7 +289,8 @@ function updateChipsDisplay() {
     document.getElementById('betAmount').max = players[0].chips;
 }
  
-document.addEventListener('DOMContentLoaded', function() { 
+document.addEventListener('DOMContentLoaded', async function() { 
+    await startGame();
     resetGame(); // Используйте resetGame для начальной настройки игры
 }); 
 document.getElementById('foldButton').addEventListener('click', resetGame);
@@ -252,6 +301,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setupGame();
 }); 
 function setupGame() {
+    console.log("setup");
     const deck = createDeck();
     const playerHand = dealCards(deck, 2);
     displayCards(playerHand, 'playerHand'); 
@@ -326,6 +376,8 @@ function displayCards(cards, elementId, append = false) {
 
 // Функция для сброса и новой раздачи карт
 function resetGame() {
+    console.log("reset");
+    console.log(players);
     // Очищаем карты игрока и бота
     document.getElementById('playerHand').innerHTML = '';
     document.getElementById('playerHand2').innerHTML = '';
@@ -337,6 +389,7 @@ function resetGame() {
 
     // Создаем новую колоду и раздаем карты
     deck = createDeck();
+
     players.forEach(player => {
         player.hand = dealCards(deck, 2);
         const handId = player.isBot ? 'playerHand2' : 'playerHand';
@@ -347,6 +400,7 @@ function resetGame() {
     updateChipsDisplay();
     updateCheckButtonVisibility();
 }
+
 
 function displayChips() {
     players.forEach(player => {
@@ -460,7 +514,9 @@ function determineWinner() {
 }
 
 function endRound() {
-    // Собираем все карты с стола
+
+    
+        // Собираем все карты с стола
     const tableCards = Array.from(document.getElementById('tableCards').children).map(cardElement => {
         return { rank: cardElement.dataset.rank, suit: cardElement.dataset.suit };
     });
