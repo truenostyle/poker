@@ -100,7 +100,7 @@
 #totalPot {
     position: absolute;
     left: 50%;
-    top: 50%;
+    top: 55%;
     transform: translate(-50%, -50%);
 }
 .button {
@@ -114,6 +114,23 @@
 
 .button:hover {
     background-color: #ccc;
+}
+
+.card {
+    border: 1px solid #000; /* Обводка */
+    border-radius: 5px; /* Скругление углов */
+    padding: 5px;
+    text-align: center;
+    margin: 5px;
+    width: 50px; /* Фиксированная ширина */
+    height: 70px; /* Фиксированная высота */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.card-rank, .card-suit {
+    display: block; /* Каждый элемент на новой строке */
 }
     </style>
 
@@ -145,8 +162,8 @@
 
  
 <script> 
-const suits = ['черви', 'бубны', 'трефы', 'пики'];
-const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Валет', 'Дама', 'Король', 'Туз'];
+const suits = ['♥', '♦', '♣', '♠'];
+const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'В', 'Д', 'К', 'Т'];
 
 let players = [
     { name: "Игрок", chips: 1000, isBot: false },
@@ -276,17 +293,33 @@ function dealCards(deck, count) {
 function displayCards(cards, elementId, append = false) {
     const element = document.getElementById(elementId);
     if (!append) {
-        element.innerHTML = ''; // Очистить предыдущие карты, если не append
+        element.innerHTML = ''; // Очистить предыдущие карты
     }
 
     cards.forEach(card => {
         const cardDiv = document.createElement('div');
-        cardDiv.textContent = `${card.rank} ${card.suit}`;
-        cardDiv.style.width = '50px';
-        cardDiv.style.height = '100px';
+        cardDiv.className = 'card';
+
+        const rankDiv = document.createElement('div');
+        rankDiv.className = 'card-rank';
+        rankDiv.textContent = card.rank;
+        cardDiv.appendChild(rankDiv);
+
+        const suitDiv = document.createElement('div');
+        suitDiv.className = 'card-suit';
+        suitDiv.textContent = card.suit;
+        cardDiv.appendChild(suitDiv);
+
         // Установка атрибутов data-rank и data-suit
         cardDiv.setAttribute('data-rank', card.rank);
         cardDiv.setAttribute('data-suit', card.suit);
+
+        // Изменение цвета текста для мастей '♥' и '♦'
+        if (card.suit === '♥' || card.suit === '♦') {
+            rankDiv.style.color = 'red';
+            suitDiv.style.color = 'red';
+        }
+
         element.appendChild(cardDiv);
     });
 }
@@ -358,8 +391,8 @@ function evaluateHand(hand) {
         }
 
         // Особый случай для стрита с тузом в качестве "1"
-        if (!isStraight && sortedRanks.includes('Туз')) {
-            isStraight = ['2', '3', '4', '5', 'Туз'].every(rank => sortedRanks.includes(rank));
+        if (!isStraight && sortedRanks.includes('Т')) {
+            isStraight = ['2', '3', '4', '5', 'Т'].every(rank => sortedRanks.includes(rank));
         }
     }
 
