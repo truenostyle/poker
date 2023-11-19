@@ -1,13 +1,133 @@
+<style>
 
-    <div id="pokerTable" class="poker-table">
-        <!-- Место для карт на столе -->
-<div id="tableCards"></div>
-        <!-- Место для карт игрока -->
+.poker-table {
+    height: 100vh;
+    width: 100%;
+
+    /* Параметр для настройки размера стола */
+    &.large {
+        width: 1200px;
+    }
+}
+
+.player-area {
+    position: absolute;
+    left: 10px; /* Позиционирование слева от центра */
+    bottom: 10%; /* Немного выше нижнего края страницы */
+    /* Другие стили по желанию */
+}
+
+.player-hand {
+    display: flex; /* Карты игрока в ряд */
+}
+
+#playerHand {
+    position: absolute;
+    bottom: 20%; /* Подогнать положение */
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex; /* Расположить карты в ряд */
+}
+
+#playerHand2 {
+    position: absolute;
+    bottom: 20%; /* Подогнать положение */
+    left: 30%;
+    transform: translateX(-50%);
+    display: flex; /* Расположить карты в ряд */
+}
+
+#tableCards {
+    position: absolute;
+    bottom: 52%; /* Поднять карты выше надписи "Общий банк" */
+    left: 50%;
+    transform: translate(-50%, 50%);
+    display: flex; /* Расположить карты в ряд */
+}
+.player-chips {
+    /* Общие стили для элементов */
+}
+
+.button-container {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    display: flex;
+    flex-direction: column; /* Элементы располагаются вертикально */
+}
+
+#betAmount {
+    width: 100px;
+    height: 30px;
+    border: 1px solid #000;
+    padding: 10px;
+    font-size: 16px;
+}
+.button-row {
+    display: flex; /* Кнопки в строку */
+}
+
+.button-row button {
+    margin-left: 5px; /* Отступы между кнопками */
+}
+
+/* Первой кнопке отступ не нужен */
+.button-row button:first-child {
+    margin-left: 0;
+}
+
+#callButton { bottom: 10px; }
+#raiseButton { bottom: 60px; }
+#foldButton { bottom: 110px; }
+#checkButton { bottom: 160px; }
+
+/* Фишки игрока ниже центра экрана */
+#playerChips {
+    position: absolute;
+    left: 50%;
+    bottom: 30%;
+    transform: translateX(-50%);
+}
+
+#botChips {
+    position: absolute;
+    left: 30%;
+    bottom: 30%;
+    transform: translateX(-50%);
+}
+
+/* Общий банк по центру экрана */
+#totalPot {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+.button {
+    background-color: #000;
+    color: #fff;
+    border: 1px solid #000;
+    padding: 10px 20px;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.button:hover {
+    background-color: #ccc;
+}
+    </style>
+
+<div class="container-fluid text-center bg-image-room1">
+
+<div id="pokerTable" class="poker-table"> 
+<div id="tableCards"></div> 
 <div id="playerHand"></div>
+<div id="playerHand2" class="player-hand"></div> 
 
 
+<div id="playerChips" class="player-chips"></div> <!-- Для игрока -->
+<div id="botChips"></div>   <!-- Для бота -->
 
-        <div id="playerChips" class="player-chips">Фишки: 1000</div>
 <div class="button-container">
 <input type="number" id="betAmount" placeholder="Ставка" max="">
     <div class="button-row">
@@ -20,47 +140,95 @@
         <div id="totalPot">Общий банк: 0</div>
         <!-- Другие элементы игры -->
 </div>
+</div>
 
 
-
-
-
-
-
-
-
-
+ 
 <script> 
+const suits = ['черви', 'бубны', 'трефы', 'пики'];
+const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Валет', 'Дама', 'Король', 'Туз'];
 
-let playerChips = 1000;
-let totalPot = 0;
-
-// Создаем колоду
-const deck = createDeck();
+let players = [
+    { name: "Игрок", chips: 1000, isBot: false },
+    { name: "Бот", chips: 2000, isBot: true }
+];
+let tableCardCount = 0;
+let totalPot = 0; 
 
 document.getElementById('callButton').addEventListener('click', () => {
-    const betAmount = parseInt(document.getElementById('betAmount').value);
-    if (betAmount <= playerChips) {
-        playerChips -= betAmount;
-        totalPot += betAmount;
-        updateChipsDisplay();
-        // Вывод карт на стол
-        const tableCards = dealCards(deck, 3);
-        displayCards(tableCards, 'tableCards');
-    } else {
-        alert('Недостаточно фишек');
-    }
+    handlePlayerAction('call');
 });
 
-document.getElementById('foldButton').addEventListener('click', resetGame);
+document.getElementById('checkButton').addEventListener('click', () => {
+    handlePlayerAction('check');
+});
 
+ 
+function handlePlayerAction(action) {
+    if (action === 'call' || action === 'check') {
+        if (action === 'call') {
+            const betAmount = parseInt(document.getElementById('betAmount').value) || 0;
+            if (betAmount <= players[0].chips) {
+                players.forEach(player => player.chips -= betAmount);
+                totalPot += betAmount * 2;
+                updateChipsDisplay();
+            } else {
+                alert('Недостаточно фишек');
+                return;
+            }
+        }
+
+        if (tableCardCount < 5) {
+        dealTableCards(); 
+    } else if (tableCardCount === 5 && (action === 'call' || action === 'check')) {
+                console.log("Стол после 5 карт:", tableCards);
+
+        endRound();
+        setTimeout(() => {
+            resetGame();
+        }, 2000);
+        return;
+    }
+
+        updateCheckButtonVisibility();
+    }
+}
+
+function updateCheckButtonVisibility() {
+    const checkButton = document.getElementById('checkButton');
+    // Кнопка "Check" должна отображаться, если на столе 3-4 карты
+    if (tableCardCount >= 3 && tableCardCount <= 5) {
+        checkButton.style.display = 'block';
+    } else {
+        checkButton.style.display = 'none';
+    }
+}
+
+function dealTableCards() {
+    const cardsToDeal = tableCardCount < 3 ? 3 - tableCardCount : 1;
+    const newTableCards = dealCards(deck, cardsToDeal);
+    displayCards(newTableCards, 'tableCards', true);
+    tableCardCount += cardsToDeal;
+}
 
 function updateChipsDisplay() {
-    document.getElementById('playerChips').innerText = `Фишки игрока: ${playerChips}`;
-    document.getElementById('totalPot').innerText = `Общий банк: ${totalPot}`;
-    document.getElementById('betAmount').max = playerChips; // Устанавливаем максимальное значение равное количеству фишек
+    const playerChipsElement = document.getElementById('playerChips');
+    const botChipsElement = document.getElementById('botChips');
 
+    if(playerChipsElement && botChipsElement) {
+        playerChipsElement.innerText = `Фишки Игрока: ${players[0].chips}`;
+        botChipsElement.innerText = `Фишки Бота: ${players[1].chips}`;
+    }
+
+    document.getElementById('totalPot').innerText = `Общий банк: ${totalPot}`;
+    document.getElementById('betAmount').max = players[0].chips;
 }
+ 
+document.addEventListener('DOMContentLoaded', function() { 
+    resetGame(); // Используйте resetGame для начальной настройки игры
+}); 
+document.getElementById('foldButton').addEventListener('click', resetGame);
+ 
 
 // Настройка начальной раздачи карт при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() { 
@@ -69,25 +237,19 @@ document.addEventListener('DOMContentLoaded', function() {
 function setupGame() {
     const deck = createDeck();
     const playerHand = dealCards(deck, 2);
-    displayCards(playerHand, 'playerHand');
-}
+    displayCards(playerHand, 'playerHand'); 
 
+    const playerHand2 = dealCards(deck, 2);
+    displayCards(playerHand2, 'playerHand2');
+} 
 
-
-// Раздаем две карты игроку и отображаем их
-const playerHand = dealCards(deck, 2);
-displayCards(playerHand, 'playerHand');
-
-
-
+ 
 
 
 //ФУНКЦИИ
 // Функция для создания колоды
 function createDeck() {
-    const suits = ['черви', 'бубны', 'трефы', 'пики'];
-    const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Валет', 'Дама', 'Король', 'Туз'];
-    const deck = [];
+   const deck = [];
     for (const suit of suits) {
         for (const rank of ranks) {
             deck.push({ rank, suit });
@@ -111,28 +273,174 @@ function dealCards(deck, count) {
 }
 
 // Функция для вывода карт
-function displayCards(cards, elementId) {
+function displayCards(cards, elementId, append = false) {
     const element = document.getElementById(elementId);
-    element.innerHTML = ''; // Очистить предыдущие карты
+    if (!append) {
+        element.innerHTML = ''; // Очистить предыдущие карты, если не append
+    }
 
     cards.forEach(card => {
         const cardDiv = document.createElement('div');
         cardDiv.textContent = `${card.rank} ${card.suit}`;
         cardDiv.style.width = '50px';
         cardDiv.style.height = '100px';
+        // Установка атрибутов data-rank и data-suit
+        cardDiv.setAttribute('data-rank', card.rank);
+        cardDiv.setAttribute('data-suit', card.suit);
         element.appendChild(cardDiv);
     });
 }
 
 // Функция для сброса и новой раздачи карт
 function resetGame() {
-    // Очищаем карты игрока
+    // Очищаем карты игрока и бота
     document.getElementById('playerHand').innerHTML = '';
+    document.getElementById('playerHand2').innerHTML = '';
     document.getElementById('tableCards').innerHTML = '';
-    totalPot = 0;
-    updateChipsDisplay();
 
-    // Задержка перед новой раздачей карт
-    setTimeout(setupGame, 3000);
-} 
+    // Сброс общего банка и количества карт на столе
+    totalPot = 0;
+    tableCardCount = 0;
+
+    // Создаем новую колоду и раздаем карты
+    deck = createDeck();
+    players.forEach(player => {
+        player.hand = dealCards(deck, 2);
+        const handId = player.isBot ? 'playerHand2' : 'playerHand';
+        displayCards(player.hand, handId);
+    });
+
+    // Обновляем отображение фишек и состояния кнопок
+    updateChipsDisplay();
+    updateCheckButtonVisibility();
+}
+
+function displayChips() {
+    players.forEach(player => {
+        const chipsDiv = document.getElementById(player.isBot ? 'botChips' : 'playerChips');
+        chipsDiv.innerText = `Фишки ${player.name}: ${player.chips}`;
+    });
+}
+
+
+
+
+
+//Комбинации  
+function evaluateHand(hand) {
+
+        console.log("Рука перед оценкой:", hand);
+
+    // Сортировка руки по рангу
+    hand.sort((a, b) => ranks.indexOf(a.rank) - ranks.indexOf(b.rank));
+
+    // Подготовка данных для анализа
+    const handSuits = hand.map(card => card.suit);
+    const handRanks = hand.map(card => card.rank);
+    const rankCounts = {};
+    handRanks.forEach(rank => rankCounts[rank] = (rankCounts[rank] || 0) + 1);
+
+    // Проверка на флеш
+    const isFlush = handSuits.every((suit, _, arr) => suit === arr[0]);
+
+    // Проверка на стрит
+    let  isStraight = handRanks.every((rank, index, arr) => index === 0 || ranks.indexOf(rank) === ranks.indexOf(arr[index - 1]) + 1);
+    if (handRanks.length >= 5) {
+        // Сортируем ранги в порядке возрастания
+        const sortedRanks = handRanks.sort((a, b) => ranks.indexOf(a) - ranks.indexOf(b));
+
+        // Проверяем последовательность рангов
+        for (let i = 0; i < sortedRanks.length - 4; i++) {
+            const startRankIndex = ranks.indexOf(sortedRanks[i]);
+            isStraight = sortedRanks.slice(i, i + 5).every((rank, index) => ranks.indexOf(rank) === startRankIndex + index);
+
+            if (isStraight) break;
+        }
+
+        // Особый случай для стрита с тузом в качестве "1"
+        if (!isStraight && sortedRanks.includes('Туз')) {
+            isStraight = ['2', '3', '4', '5', 'Туз'].every(rank => sortedRanks.includes(rank));
+        }
+    }
+
+    // Проверка на другие комбинации
+    const hasPair = Object.values(rankCounts).includes(2);
+    const hasTwoPairs = Object.values(rankCounts).filter(count => count === 2).length === 2;
+    const hasThreeOfAKind = Object.values(rankCounts).includes(3);
+    const hasFourOfAKind = Object.values(rankCounts).includes(4);
+    const hasFullHouse = hasThreeOfAKind && hasPair;
+
+    // Оценка руки
+    let score = 0;
+    if (isFlush && isStraight) {
+        score = 8; // Стрит-флеш
+    } else if (hasFourOfAKind) {
+        score = 7; // Каре
+    } else if (hasFullHouse) {
+        score = 6; // Фулл хаус
+    } else if (isFlush) {
+        score = 5; // Флеш
+    } else if (isStraight) {
+        score = 4; // Стрит
+    } else if (hasThreeOfAKind) {
+        score = 3; // Тройка
+    } else if (hasTwoPairs) {
+        score = 2; // Две пары
+    } else if (hasPair) {
+        score = 1; // Пара
+    }
+
+    return score;
+}
+
+function determineWinner() {
+    // Получаем элементы карт со стола
+    const tableCardElements = Array.from(document.getElementById('tableCards').children);
+
+    // Преобразуем элементы в объекты карт
+    const tableCards = tableCardElements.map(cardElement => {
+        const rank = cardElement.getAttribute('data-rank');
+        const suit = cardElement.getAttribute('data-suit');
+        return { rank, suit };
+    });
+
+    // Соединяем карты игрока и карты на столе, передаем в функцию оценки
+    const playerHandValue = evaluateHand([...players[0].hand, ...tableCards]);
+    const botHandValue = evaluateHand([...players[1].hand, ...tableCards]);
+
+    // Логика определения победителя
+    if (playerHandValue > botHandValue) {
+        console.log("Игрок выиграл!");
+        players[0].chips += totalPot;
+    } else if (botHandValue > playerHandValue) {
+        console.log("Бот выиграл!");
+        players[1].chips += totalPot;
+    } else {
+        console.log("Ничья!");
+        const potSplit = totalPot / 2;
+        players[0].chips += potSplit;
+        players[1].chips += potSplit;
+    }
+
+    // Сброс игры для следующего раунда
+    resetGame();
+}
+
+function endRound() {
+    // Собираем все карты с стола
+    const tableCards = Array.from(document.getElementById('tableCards').children).map(cardElement => {
+        return { rank: cardElement.dataset.rank, suit: cardElement.dataset.suit };
+    });
+
+    // Собираем полную руку для игрока и бота
+    const playerFullHand = [...players[0].hand, ...tableCards];
+    const botFullHand = [...players[1].hand, ...tableCards];
+
+    // Оцениваем руки
+    const playerHandValue = evaluateHand(playerFullHand);
+    const botHandValue = evaluateHand(botFullHand);
+
+    // Определяем победителя
+    determineWinner(playerHandValue, botHandValue);
+}
 </script>

@@ -10,4 +10,3 @@ CREATE TABLE IF NOT EXISTS users (
     nickname VARCHAR(255) NOT NULL,
     chips INT NOT NULL
 );
-

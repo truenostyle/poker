@@ -8,8 +8,8 @@ import fs from 'fs';
 
 const connection = mysql.createPool({
   host: 'localhost',
-  user: 'Trueno', // Ваш пользователь MySQL
-  password: 'Jigsaw9901', // Ваш пароль MySQL
+  user: 'admin', // Ваш пользователь MySQL
+  password: 'admin', // Ваш пароль MySQL
   multipleStatements: true, // Разрешаем множественные SQL-запросы
   connectionLimit: 10, 
 });

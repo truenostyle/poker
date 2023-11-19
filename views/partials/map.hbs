@@ -21,7 +21,7 @@
 <div class="container-fluid text-center bg-image-map">
     <div class="d-flex justify-content-center">
         <div class="position-absolute" style="top: 10%; left: 20%;">
-        <a href="./room1">
+        <a id="room1" href="./room1">
             <img src="https://w7.pngwing.com/pngs/654/834/png-transparent-framing-architectural-engineering-building-project-house-building-building-framing-material-thumbnail.png" alt="Уровень 1" style="width: 100px; height: 100px;">
         </a>
         <div style="text-align: center; color: black;">Уровень 1</div>
@@ -56,6 +56,11 @@
 
     
 <script>
+
+ 
+
+
+
 // чат
 // На странице чата
 const socket = io();
@@ -119,12 +124,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+const urlSearchParams1 = new URLSearchParams(window.location.search);
+const nickname = urlSearchParams1.get("nickname");
 function checkOverlap(x, y) {
     const links = document.querySelectorAll('.container-fluid a');
     links.forEach(link => {
         const rect = link.getBoundingClientRect();
         if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-            window.location.href = link.href;
+            window.location.href = link.href + "?nickname=" + encodeURIComponent(nickname);
         }
     });
 }

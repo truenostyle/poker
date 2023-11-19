@@ -23,78 +23,17 @@
             z-index: -1; /* Расположить блок под другими элементами */
             background: url('/photo/map.png') no-repeat center center;
             background-size: cover; 
-        }
-
-
-.poker-table {
-    position: relative;
-    height: 100vh;
-}
-
-#playerHand {
-    position: absolute;
-    bottom: 20%; /* Подогнать положение */
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex; /* Расположить карты в ряд */
-}
-
-#tableCards {
-    position: absolute;
-    bottom: 52%; /* Поднять карты выше надписи "Общий банк" */
-    left: 50%;
-    transform: translate(-50%, 50%);
-    display: flex; /* Расположить карты в ряд */
-}
-.player-chips {
-    /* Общие стили для элементов */
-}
-
-.button-container {
-    position: absolute;
-    right: 10px;
-    bottom: 10px;
-    display: flex;
-    flex-direction: column; /* Элементы располагаются вертикально */
-}
-
-#betAmount {
-    margin-bottom: 10px; /* Отступ между полем ввода и кнопками */
-}
-
-.button-row {
-    display: flex; /* Кнопки в строку */
-}
-
-.button-row button {
-    margin-left: 5px; /* Отступы между кнопками */
-}
-
-/* Первой кнопке отступ не нужен */
-.button-row button:first-child {
-    margin-left: 0;
-}
-
-#callButton { bottom: 10px; }
-#raiseButton { bottom: 60px; }
-#foldButton { bottom: 110px; }
-#checkButton { bottom: 160px; }
-
-/* Фишки игрока ниже центра экрана */
-#playerChips {
-    position: absolute;
-    left: 50%;
-    bottom: 30%;
-    transform: translateX(-50%);
-}
-
-/* Общий банк по центру экрана */
-#totalPot {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-}
+        } 
+        .bg-image-room1 {
+            position: fixed; /* Фиксированное позиционирование */
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1; /* Расположить блок под другими элементами */
+            background: url('https://st2.depositphotos.com/37050820/42882/v/450/depositphotos_428822624-stock-illustration-poker-or-blackjack-table-made.jpg') no-repeat center center;
+            background-size: cover; 
+        } 
 
     </style>
     
