@@ -21,7 +21,7 @@
     display: flex; /* Карты игрока в ряд */
 }
 
-#playerHand {
+#playerHand1 {
     position: absolute;
     bottom: 20%; /* Подогнать положение */
     left: 50%;
@@ -82,19 +82,20 @@
 #checkButton { bottom: 160px; }
 
 /* Фишки игрока ниже центра экрана */
-#playerChips {
+#playerChips1 {
     position: absolute;
     left: 50%;
     bottom: 30%;
     transform: translateX(-50%);
 }
-
-#botChips {
+#playerChips2 {
     position: absolute;
     left: 30%;
     bottom: 30%;
     transform: translateX(-50%);
 }
+
+
 
 /* Общий банк по центру экрана */
 #totalPot {
@@ -138,19 +139,19 @@
 
 <div id="pokerTable" class="poker-table"> 
 <div id="tableCards"></div> 
-<div id="playerHand"></div>
+<div id="playerHand1" class="player-hand"></div>
 <div id="playerHand2" class="player-hand"></div> 
 
 
-<div id="playerChips" class="player-chips"></div> <!-- Для игрока -->
-<div id="botChips"></div>   <!-- Для бота -->
+<div id="playerChips1" class="player-chips"></div> 
+<div id="playerChips2" class="player-chips"></div>  
 
 <div class="button-container">
-<input type="number" id="betAmount" placeholder="Ставка" max="">
+<input type="number" id="betAmount" placeholder="Ставка" max="" value="0">
     <div class="button-row">
-        <button id="startButton">Start</button>
+        <button id="stopGame">Stop Game</button>
+        <button id="startButton">Join</button>
         <button id="callButton">Call</button>
-        <button id="raiseButton">Raise</button>
         <button id="foldButton">Fold</button>
         <button id="checkButton" style="display: none;">Check</button>
     </div>
@@ -168,368 +169,199 @@ const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'В', 'Д', 'К', '
 
 const urlSearchParams = new URLSearchParams(window.location.search);
 const nickname = urlSearchParams.get("nickname");
-
-let playerChips;
-let players = [];
+const tableCardsElement = document.getElementById('tableCards');
 
 const socket = io();
 
-function init() {
-  // Отправляем запрос на получение фишек
- 
+document.addEventListener('DOMContentLoaded', function() {
+    loadGame();
+});
+
+function loadGame() {
+    socket.emit('loadGame');
+    
 }
 
-function initializeGame() {
-  console.log(nickname + " " + playerChips);
+socket.on('loadData', (players) => {
+    if (players && players.length >= 2) {
+        console.log('Loaded data:', players);
+        getPlayersChips();
 
-  players = [
-    { name: nickname, chips: playerChips, isBot: false },
-    { name: "Бот", chips: 2000, isBot: true }
-  ];
-
-  // Дополнительная инициализация игры
-}
-
-
+    } else {
+        console.log('No players data available');
+        // Обработка ситуации, когда данных об игроках нет или их недостаточно
+    }
+});
 
 
-let tableCardCount = 0;
-let totalPot = 0; 
+socket.on('PlayersIsNull', () => {
+    console.log('Players is null');
+    // Обработка ситуации, когда массив игроков пуст
+});
 
-document.getElementById('callButton').addEventListener('click', () => {
-    handlePlayerAction('call');
+
+document.getElementById('callButton').addEventListener('click', function () {
+    // Получаем сумму ставки от игрока
+    const betAmount = parseInt(document.getElementById('betAmount').value);
+
+    if (betAmount <= 0) {
+        alert("Bet amount must be greater than 0");
+    } else {
+        // Логика для кнопки Call
+        socket.emit('playerAction', { action: 'call', amount: betAmount });
+    }
+
+    getPlayersChips();
+});
+
+
+document.getElementById('foldButton').addEventListener('click', function () {
+    // Логика для кнопки Fold
+    socket.emit('playerAction', { action: 'fold', amount: 0 });
 });
 
 document.getElementById('checkButton').addEventListener('click', () => {
-    handlePlayerAction('check');
+    socket.emit('playerAction', { action: 'check', amount: 0 });
 });
 
 document.getElementById('startButton').addEventListener('click', () => {
-    startGame();
+    console.log("join");
+    socket.emit('joinGame', nickname);
 });
 
-function startGame() {
-    console.log("start");
-    return new Promise(resolve => {
-        
-        socket.emit('getChips', nickname);
+document.getElementById('stopGame').addEventListener('click', () => {
+    console.log("join");
+    socket.emit('stopGame');
+});
 
-        // Ожидаем обновления фишек
-        socket.on('chipsUpdate', (chips) => {
-            playerChips = chips;
-            console.log(`Текущее количество фишек: ${playerChips}`);
-
-            // Вызываем остальной код, зависящий от playerChips
-            initializeGame();
-
-            // Решение Promise после получения фишек
-            resolve();
-        });
+socket.on('waitingForPlayer', () => {
+        alert('Ожидаем второго игрока...');
     });
+
+socket.on('gameFull', () => {
+         alert('Игра уже началась. Попробуйте позже.');
+    });
+
+socket.on('startGame', (players) => {
+    console.log('Game started with players:', players);
+
+    getPlayersChips();
+    
+
+    // Другие обновления интерфейса, если необходимо
+});
+
+function getPlayersChips() {
+    socket.emit('getPlayerDataRequest');
 }
 
-function handlePlayerAction(action) {
-    if (action === 'call' || action === 'check') {
-        if (action === 'call') {
-            console.log(players);
-            const betAmount = parseInt(document.getElementById('betAmount').value) || 0;
-            if (betAmount <= players[0].chips) {
-                players.forEach(player => player.chips -= betAmount);
-                totalPot += betAmount * 2;
-                updateChipsDisplay();
-            } else {
-                alert('Недостаточно фишек');
-                return;
+socket.on('playerDataResponse', (players, totalBank) => {
+    for(let i = 0; i < players.length; i++)
+        {
+            if(players[i].nick === nickname)
+            {
+                document.getElementById('playerChips1').innerText = `${players[i].nick}: ${players[i].chips} chips`;
+            }
+            else {
+                 document.getElementById('playerChips2').innerText = `${players[i].nick}: ${players[i].chips} chips`;
             }
         }
+    document.getElementById('totalPot').innerText = totalBank;
+    // Обработка полученных данных
+});
 
-        if (tableCardCount < 5) {
-        dealTableCards(); 
-    } else if (tableCardCount === 5 && (action === 'call' || action === 'check')) {
-                console.log("Стол после 5 карт:", tableCards);
+socket.on('dealCards', ({ hand, tableCards }) => {
+    console.log('Dealing cards:', hand, tableCards);
 
-        endRound();
-        setTimeout(() => {
-            resetGame();
-        }, 2000);
-        return;
+    const playerHandElement = document.getElementById('playerHand1');
+    playerHandElement.innerHTML = ''; // Очистить предыдущие карты
+
+    // Отобразите только свои карты
+    for (const card of hand) {
+        const cardElement = document.createElement('div');
+        cardElement.innerText = `${card.rank}${card.suit}`;
+        playerHandElement.appendChild(cardElement);
     }
 
-        updateCheckButtonVisibility();
-    }
-}
-
-function updateCheckButtonVisibility() {
-    const checkButton = document.getElementById('checkButton');
-    // Кнопка "Check" должна отображаться, если на столе 3-4 карты
-    if (tableCardCount >= 3 && tableCardCount <= 5) {
-        checkButton.style.display = 'block';
-    } else {
-        checkButton.style.display = 'none';
-    }
-}
-
-function dealTableCards() {
-    const cardsToDeal = tableCardCount < 3 ? 3 - tableCardCount : 1;
-    const newTableCards = dealCards(deck, cardsToDeal);
-    displayCards(newTableCards, 'tableCards', true);
-    tableCardCount += cardsToDeal;
-}
-
-function updateChipsDisplay() {
-    const playerChipsElement = document.getElementById('playerChips');
-    const botChipsElement = document.getElementById('botChips');
-
-    if(playerChipsElement && botChipsElement) {
-        playerChipsElement.innerText = `Фишки Игрока: ${players[0].chips}`;
-        botChipsElement.innerText = `Фишки Бота: ${players[1].chips}`;
-    }
-
-    document.getElementById('totalPot').innerText = `Общий банк: ${totalPot}`;
-    document.getElementById('betAmount').max = players[0].chips;
-}
- 
-document.addEventListener('DOMContentLoaded', async function() { 
-    await startGame();
-    resetGame(); // Используйте resetGame для начальной настройки игры
-}); 
-document.getElementById('foldButton').addEventListener('click', resetGame);
- 
-
-// Настройка начальной раздачи карт при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() { 
-    setupGame();
-}); 
-function setupGame() {
-    console.log("setup");
-    const deck = createDeck();
-    const playerHand = dealCards(deck, 2);
-    displayCards(playerHand, 'playerHand'); 
-
-    const playerHand2 = dealCards(deck, 2);
-    displayCards(playerHand2, 'playerHand2');
-} 
-
- 
-
-
-//ФУНКЦИИ
-// Функция для создания колоды
-function createDeck() {
-   const deck = [];
-    for (const suit of suits) {
-        for (const rank of ranks) {
-            deck.push({ rank, suit });
-        }
-    } 
-    return shuffle(deck);
-}
-
-// Функция для перемешивания колоды
-function shuffle(deck) {
-    for (let i = deck.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [deck[i], deck[j]] = [deck[j], deck[i]];
-    }
-    return deck;
-}
-
-// Функция для раздачи карт
-function dealCards(deck, count) {
-    return deck.splice(0, count);
-}
-
-// Функция для вывода карт
-function displayCards(cards, elementId, append = false) {
-    const element = document.getElementById(elementId);
-    if (!append) {
-        element.innerHTML = ''; // Очистить предыдущие карты
-    }
-
-    cards.forEach(card => {
-        const cardDiv = document.createElement('div');
-        cardDiv.className = 'card';
-
-        const rankDiv = document.createElement('div');
-        rankDiv.className = 'card-rank';
-        rankDiv.textContent = card.rank;
-        cardDiv.appendChild(rankDiv);
-
-        const suitDiv = document.createElement('div');
-        suitDiv.className = 'card-suit';
-        suitDiv.textContent = card.suit;
-        cardDiv.appendChild(suitDiv);
-
-        // Установка атрибутов data-rank и data-suit
-        cardDiv.setAttribute('data-rank', card.rank);
-        cardDiv.setAttribute('data-suit', card.suit);
-
-        // Изменение цвета текста для мастей '♥' и '♦'
-        if (card.suit === '♥' || card.suit === '♦') {
-            rankDiv.style.color = 'red';
-            suitDiv.style.color = 'red';
-        }
-
-        element.appendChild(cardDiv);
-    });
-}
-
-// Функция для сброса и новой раздачи карт
-function resetGame() {
-    console.log("reset");
-    console.log(players);
-    // Очищаем карты игрока и бота
-    document.getElementById('playerHand').innerHTML = '';
-    document.getElementById('playerHand2').innerHTML = '';
-    document.getElementById('tableCards').innerHTML = '';
-
-    // Сброс общего банка и количества карт на столе
-    totalPot = 0;
-    tableCardCount = 0;
-
-    // Создаем новую колоду и раздаем карты
-    deck = createDeck();
-
-    players.forEach(player => {
-        player.hand = dealCards(deck, 2);
-        const handId = player.isBot ? 'playerHand2' : 'playerHand';
-        displayCards(player.hand, handId);
-    });
-
-    // Обновляем отображение фишек и состояния кнопок
-    updateChipsDisplay();
-    updateCheckButtonVisibility();
-}
-
-
-function displayChips() {
-    players.forEach(player => {
-        const chipsDiv = document.getElementById(player.isBot ? 'botChips' : 'playerChips');
-        chipsDiv.innerText = `Фишки ${player.name}: ${player.chips}`;
-    });
-}
-
-
-
-
-
-//Комбинации  
-function evaluateHand(hand) {
-
-        console.log("Рука перед оценкой:", hand);
-
-    // Сортировка руки по рангу
-    hand.sort((a, b) => ranks.indexOf(a.rank) - ranks.indexOf(b.rank));
-
-    // Подготовка данных для анализа
-    const handSuits = hand.map(card => card.suit);
-    const handRanks = hand.map(card => card.rank);
-    const rankCounts = {};
-    handRanks.forEach(rank => rankCounts[rank] = (rankCounts[rank] || 0) + 1);
-
-    // Проверка на флеш
-    const isFlush = handSuits.every((suit, _, arr) => suit === arr[0]);
-
-    // Проверка на стрит
-    let  isStraight = handRanks.every((rank, index, arr) => index === 0 || ranks.indexOf(rank) === ranks.indexOf(arr[index - 1]) + 1);
-    if (handRanks.length >= 5) {
-        // Сортируем ранги в порядке возрастания
-        const sortedRanks = handRanks.sort((a, b) => ranks.indexOf(a) - ranks.indexOf(b));
-
-        // Проверяем последовательность рангов
-        for (let i = 0; i < sortedRanks.length - 4; i++) {
-            const startRankIndex = ranks.indexOf(sortedRanks[i]);
-            isStraight = sortedRanks.slice(i, i + 5).every((rank, index) => ranks.indexOf(rank) === startRankIndex + index);
-
-            if (isStraight) break;
-        }
-
-        // Особый случай для стрита с тузом в качестве "1"
-        if (!isStraight && sortedRanks.includes('Т')) {
-            isStraight = ['2', '3', '4', '5', 'Т'].every(rank => sortedRanks.includes(rank));
-        }
-    }
-
-    // Проверка на другие комбинации
-    const hasPair = Object.values(rankCounts).includes(2);
-    const hasTwoPairs = Object.values(rankCounts).filter(count => count === 2).length === 2;
-    const hasThreeOfAKind = Object.values(rankCounts).includes(3);
-    const hasFourOfAKind = Object.values(rankCounts).includes(4);
-    const hasFullHouse = hasThreeOfAKind && hasPair;
-
-    // Оценка руки
-    let score = 0;
-    if (isFlush && isStraight) {
-        score = 8; // Стрит-флеш
-    } else if (hasFourOfAKind) {
-        score = 7; // Каре
-    } else if (hasFullHouse) {
-        score = 6; // Фулл хаус
-    } else if (isFlush) {
-        score = 5; // Флеш
-    } else if (isStraight) {
-        score = 4; // Стрит
-    } else if (hasThreeOfAKind) {
-        score = 3; // Тройка
-    } else if (hasTwoPairs) {
-        score = 2; // Две пары
-    } else if (hasPair) {
-        score = 1; // Пара
-    }
-
-    return score;
-}
-
-function determineWinner() {
-    // Получаем элементы карт со стола
-    const tableCardElements = Array.from(document.getElementById('tableCards').children);
-
-    // Преобразуем элементы в объекты карт
-    const tableCards = tableCardElements.map(cardElement => {
-        const rank = cardElement.getAttribute('data-rank');
-        const suit = cardElement.getAttribute('data-suit');
-        return { rank, suit };
-    });
-
-    // Соединяем карты игрока и карты на столе, передаем в функцию оценки
-    const playerHandValue = evaluateHand([...players[0].hand, ...tableCards]);
-    const botHandValue = evaluateHand([...players[1].hand, ...tableCards]);
-
-    // Логика определения победителя
-    if (playerHandValue > botHandValue) {
-        console.log("Игрок выиграл!");
-        players[0].chips += totalPot;
-    } else if (botHandValue > playerHandValue) {
-        console.log("Бот выиграл!");
-        players[1].chips += totalPot;
-    } else {
-        console.log("Ничья!");
-        const potSplit = totalPot / 2;
-        players[0].chips += potSplit;
-        players[1].chips += potSplit;
-    }
-
-    // Сброс игры для следующего раунда
-    resetGame();
-}
-
-function endRound() {
-
+    // Отобразите карты на столе
     
-        // Собираем все карты с стола
-    const tableCards = Array.from(document.getElementById('tableCards').children).map(cardElement => {
-        return { rank: cardElement.dataset.rank, suit: cardElement.dataset.suit };
+    tableCardsElement.innerHTML = ''; // Очистить предыдущие карты
+    for (const card of tableCards) {
+        const cardElement = document.createElement('div');
+        cardElement.innerText = `${card.rank}${card.suit}`;
+        tableCardsElement.appendChild(cardElement);
+         cardElement.style.display = 'none';
+    }
+    
+});
+
+socket.on('showFlop', () => {
+    console.log("showFlop");
+    document.getElementById("checkButton").style.display = 'block';
+    // Показать только первые три карты
+    for (let i = 0; i < 3; i++) {
+        const cardElement = tableCardsElement.children[i];
+        if (cardElement) {
+            cardElement.style.display = 'inline-block';
+        }
+    }
+});
+
+socket.on('showTurn', () => {
+    console.log("showTurn");
+
+    // Показать только первые три карты
+    for (let i = 0; i < 4; i++) {
+        const cardElement = tableCardsElement.children[i];
+        if (cardElement) {
+            cardElement.style.display = 'inline-block';
+        }
+    }
+});
+
+socket.on('showRiver', () => {
+    console.log("showRiver");
+
+    // Показать только первые три карты
+    for (let i = 0; i < 5; i++) {
+        const cardElement = tableCardsElement.children[i];
+        if (cardElement) {
+            cardElement.style.display = 'inline-block';
+        }
+    }
+});
+
+socket.on('endRound', (result) => {
+  // Логика для обработки результатов раунда
+  console.log('Round ended:', result);
+  // Здесь вы можете обновить интерфейс, отобразив победителя и другую информацию
+  // Например: document.getElementById('result').innerText = result;
+});
+const buttons = document.querySelectorAll('.button-row button');
+socket.on('playerActionDone', () => {
+    
+    disableButtons(buttons);
+});
+
+socket.on('playerActionNotDone', () => {
+
+    enableButtons(buttons);
+});
+
+socket.on('yourTurn', (resp) => {
+    disableButtons(buttons);
+}); 
+// Отключите все кнопки
+function disableButtons(buttons) {
+    buttons.forEach(button => {
+        button.disabled = true;
     });
+}
 
-    // Собираем полную руку для игрока и бота
-    const playerFullHand = [...players[0].hand, ...tableCards];
-    const botFullHand = [...players[1].hand, ...tableCards];
-
-    // Оцениваем руки
-    const playerHandValue = evaluateHand(playerFullHand);
-    const botHandValue = evaluateHand(botFullHand);
-
-    // Определяем победителя
-    determineWinner(playerHandValue, botHandValue);
+// Включите все кнопки
+function enableButtons(buttons) {
+    buttons.forEach(button => {
+        button.disabled = false;
+    });
 }
 </script>
