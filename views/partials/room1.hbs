@@ -133,6 +133,37 @@
 .card-rank, .card-suit {
     display: block; /* Каждый элемент на новой строке */
 }
+ #chat {
+    height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column; 
+}
+
+#main-chat {
+    position: absolute;
+    bottom: 0px;
+}
+
+
+#message-input {
+    margin-top: auto;
+}
+
+#settings {
+    background-color: white;
+    border-radius: 1px;
+    border: 1px blueviolet solid;
+    width: 225px;
+    height: 100px;
+    position: absolute;
+    bottom: 0px;
+    left: 33%;
+    display: none;
+    align-items: center;
+    text-align: center;
+}
+
     </style>
 
 <div class="container-fluid text-center bg-image-room1">
@@ -148,30 +179,122 @@
 
 <div class="button-container">
 <input type="number" id="betAmount" placeholder="Ставка" max="" value="0">
-    <div class="button-row">
-        <button id="stopGame">Stop Game</button>
-        <button id="startButton">Join</button>
+    
+    <div class="game-btn button-row">
         <button id="callButton">Call</button>
         <button id="foldButton">Fold</button>
         <button id="checkButton" style="display: none;">Check</button>
     </div>
+    <div class="button-row">
+        <button id="stopGame">Stop Game</button>
+        <button id="startButton">Join</button>
+    </div>
 </div> 
         <div id="totalPot">Общий банк: 0</div>
-        <!-- Другие элементы игры -->
+
 </div>
+</div>
+
+<div id="settings">
+        <h3>Настройки</h3>
+        <input class="form-check-input" id="chat-history" type="checkbox" >
+         <label class="form-check-label" for="chat-history">
+            История чата
+        </label>
+    </div>
+
+<div class="col-4 bg-white d-flex flex-column" id="main-chat">
+    <div id="chat" class="border p-3">
+        <div id="chat-messages" class="mb-3"></div>
+    </div>
+    <input type="text" id="message-input" class="form-control mb-2" placeholder="Введите ваше сообщение">
+    <div class="row">
+        <button id="send-message" class="btn btn-primary m-2  col-7">Отправить</button>
+        <button id="settings-button" class="btn btn-primary m-2">Настройки</button>
+        <button id="get-stats" class="btn btn-primary m-2">Статистика</button>
+    </div>
+    
 </div>
 
 
  
 <script> 
+// chat
+
+const socket = io();
+
+ 
+document.addEventListener("DOMContentLoaded", function () {
+    const messageInput = document.getElementById("message-input");
+    const sendMessageButton = document.getElementById("send-message");
+    const chatMessages = document.getElementById("chat-messages");
+    const chatHistoryCheckbox = document.getElementById("chat-history");
+    const urlSearchParams = new URLSearchParams(window.location.search);
+const nickname = urlSearchParams.get("nickname");
+ const room = "room1";
+
+    document.getElementById('get-stats').addEventListener('click', function () {
+        socket.emit('getStats');
+    });
+
+
+     document.getElementById('settings-button').addEventListener('click', function () {
+        const settingsWindow = document.getElementById('settings');
+        if(settingsWindow.style.display === 'none') {
+            settingsWindow.style.display = 'block';
+        }
+        else {
+            settingsWindow.style.display = 'none'
+        }
+        
+    });
+
+    sendMessageButton.addEventListener("click", function () {
+        const message = messageInput.value;
+        if (message.trim() !== "") {
+
+            socket.emit("sendMessage", { message, nickname, room });
+            messageInput.value = "";
+        }
+    });
+
+    socket.on('receiveMessage', function (data) {
+
+        const { nickname, message } = data;
+
+        const messageElement = document.createElement("div");
+        messageElement.textContent = `${nickname}: ${message}`;
+        
+        chatMessages.appendChild(messageElement);
+    });
+
+
+    chatHistoryCheckbox.addEventListener('change', function() {
+    if (this.checked) {
+        socket.emit("requestChatHistory", { room });
+    }
+    else {
+        chatMessages.innerHTML = '';
+    }
+
+    socket.on("chatHistory", function (history) {
+
+        chatMessages.innerHTML = '';
+
+        history.forEach(item => {
+            const messageElement = document.createElement('div');
+            messageElement.textContent = `${item.nickname}: ${item.message}`;
+            chatMessages.appendChild(messageElement);
+        });
+    });
+});
+});
+//other
 const suits = ['♥', '♦', '♣', '♠'];
 const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'В', 'Д', 'К', 'Т'];
 
-const urlSearchParams = new URLSearchParams(window.location.search);
-const nickname = urlSearchParams.get("nickname");
-const tableCardsElement = document.getElementById('tableCards');
 
-const socket = io();
+const tableCardsElement = document.getElementById('tableCards');
 
 document.addEventListener('DOMContentLoaded', function() {
     loadGame();
@@ -189,25 +312,31 @@ socket.on('loadData', (players) => {
 
     } else {
         console.log('No players data available');
-        // Обработка ситуации, когда данных об игроках нет или их недостаточно
+
     }
 });
 
+socket.on('changeNick', () => {
+    alert("Смените ник");
+     socket.emit('stopGame');
+    window.location.href = "http://localhost:4444/";
+   
+})
 
 socket.on('PlayersIsNull', () => {
     console.log('Players is null');
-    // Обработка ситуации, когда массив игроков пуст
+
 });
 
 
 document.getElementById('callButton').addEventListener('click', function () {
-    // Получаем сумму ставки от игрока
+
     const betAmount = parseInt(document.getElementById('betAmount').value);
 
     if (betAmount <= 0) {
         alert("Bet amount must be greater than 0");
     } else {
-        // Логика для кнопки Call
+
         socket.emit('playerAction', { action: 'call', amount: betAmount });
     }
 
@@ -216,7 +345,7 @@ document.getElementById('callButton').addEventListener('click', function () {
 
 
 document.getElementById('foldButton').addEventListener('click', function () {
-    // Логика для кнопки Fold
+
     socket.emit('playerAction', { action: 'fold', amount: 0 });
 });
 
@@ -248,7 +377,6 @@ socket.on('startGame', (players) => {
     getPlayersChips();
     
 
-    // Другие обновления интерфейса, если необходимо
 });
 
 function getPlayersChips() {
@@ -267,25 +395,24 @@ socket.on('playerDataResponse', (players, totalBank) => {
             }
         }
     document.getElementById('totalPot').innerText = totalBank;
-    // Обработка полученных данных
+
 });
 
 socket.on('dealCards', ({ hand, tableCards }) => {
     console.log('Dealing cards:', hand, tableCards);
 
     const playerHandElement = document.getElementById('playerHand1');
-    playerHandElement.innerHTML = ''; // Очистить предыдущие карты
+    playerHandElement.innerHTML = '';
 
-    // Отобразите только свои карты
+
     for (const card of hand) {
         const cardElement = document.createElement('div');
         cardElement.innerText = `${card.rank}${card.suit}`;
         playerHandElement.appendChild(cardElement);
     }
 
-    // Отобразите карты на столе
     
-    tableCardsElement.innerHTML = ''; // Очистить предыдущие карты
+    tableCardsElement.innerHTML = '';
     for (const card of tableCards) {
         const cardElement = document.createElement('div');
         cardElement.innerText = `${card.rank}${card.suit}`;
@@ -298,7 +425,7 @@ socket.on('dealCards', ({ hand, tableCards }) => {
 socket.on('showFlop', () => {
     console.log("showFlop");
     document.getElementById("checkButton").style.display = 'block';
-    // Показать только первые три карты
+
     for (let i = 0; i < 3; i++) {
         const cardElement = tableCardsElement.children[i];
         if (cardElement) {
@@ -310,7 +437,7 @@ socket.on('showFlop', () => {
 socket.on('showTurn', () => {
     console.log("showTurn");
 
-    // Показать только первые три карты
+
     for (let i = 0; i < 4; i++) {
         const cardElement = tableCardsElement.children[i];
         if (cardElement) {
@@ -322,7 +449,6 @@ socket.on('showTurn', () => {
 socket.on('showRiver', () => {
     console.log("showRiver");
 
-    // Показать только первые три карты
     for (let i = 0; i < 5; i++) {
         const cardElement = tableCardsElement.children[i];
         if (cardElement) {
@@ -332,12 +458,11 @@ socket.on('showRiver', () => {
 });
 
 socket.on('endRound', (result) => {
-  // Логика для обработки результатов раунда
+
   console.log('Round ended:', result);
-  // Здесь вы можете обновить интерфейс, отобразив победителя и другую информацию
-  // Например: document.getElementById('result').innerText = result;
+
 });
-const buttons = document.querySelectorAll('.button-row button');
+const buttons = document.querySelectorAll('.game-btn button');
 socket.on('playerActionDone', () => {
     
     disableButtons(buttons);
@@ -351,14 +476,14 @@ socket.on('playerActionNotDone', () => {
 socket.on('yourTurn', (resp) => {
     disableButtons(buttons);
 }); 
-// Отключите все кнопки
+
 function disableButtons(buttons) {
     buttons.forEach(button => {
         button.disabled = true;
     });
 }
 
-// Включите все кнопки
+
 function enableButtons(buttons) {
     buttons.forEach(button => {
         button.disabled = false;

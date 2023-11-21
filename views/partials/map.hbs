@@ -16,32 +16,40 @@
     margin-top: auto;
 }
 
+#settings {
+    background-color: white;
+    border-radius: 1px;
+    border: 1px blueviolet solid;
+    width: 200px;
+    height: 100px;
+    position: absolute;
+    bottom: 0px;
+    left: 33%;
+    display: none;
+}
 </style>
 
 <div class="container-fluid text-center bg-image-map">
     <div class="d-flex justify-content-center">
-        <div class="position-absolute" style="top: 10%; left: 20%;">
-        <a id="room1" href="./room1">
-            <img src="https://w7.pngwing.com/pngs/654/834/png-transparent-framing-architectural-engineering-building-project-house-building-building-framing-material-thumbnail.png" alt="Уровень 1" style="width: 100px; height: 100px;">
+        <div class="position-absolute" style="top: 7%; left: 49.5%; height: 125px; width: 125px;">
+        <div style="text-align: center; color: black; font-size: 20px; font-weight: bold;">Лобби 1</div>
+        <a id="room1" href="./room1" style="background-color: black; height: 125px; width: 125px;">
+           <div style="height: 125px; width: 125px; color: white; background-color: white; opacity: 0.4;"></div>
         </a>
-        <div style="text-align: center; color: black;">Уровень 1</div>
+        
     </div>
-
-    <div class="position-absolute" style="top: 50%; left: 40%;">
-        <a href="/level2">
-            <img src="https://w7.pngwing.com/pngs/654/834/png-transparent-framing-architectural-engineering-building-project-house-building-building-framing-material-thumbnail.png" alt="Уровень 2" style="width: 100px; height: 100px;">
-        </a>
-        <div style="text-align: center; color: black;">Уровень 2</div>
+    
+    <div id="settings">
+        <h3>Настройки</h3>
+        <input class="form-check-input" id="chat-history" type="checkbox" >
+         <label class="form-check-label" for="chat-history">
+            История чата
+        </label>
     </div>
-
-    <div class="position-absolute" style="top: 70%; right: 30%;">
-        <a href="/level3">
-            <img src="https://w7.pngwing.com/pngs/654/834/png-transparent-framing-architectural-engineering-building-project-house-building-building-framing-material-thumbnail.png" alt="Уровень 3" style="width: 100px; height: 100px;">
-        </a>
-        <div style="text-align: center; color: black;">Уровень 3</div>
+    
     </div>
-    </div>
-    <img src="https://upload.wikimedia.org/wikipedia/ru/f/f6/Kirby_FL.png" alt="Moving Image" id="movingImage" style="position: absolute; width: 50px; height: 50px; left: 0; top: 0;">
+    <img src="https://upload.wikimedia.org/wikipedia/ru/f/f6/Kirby_FL.png" alt="Moving Image" id="player1" style="position: absolute; width: 50px; height: 50px; left: 0; top: 0;">
+    <img src="https://upload.wikimedia.org/wikipedia/ru/f/f6/Kirby_FL.png" alt="Moving Image" id="player2" style="position: absolute; width: 50px; height: 50px; left: 0; top: 0;">
 
 </div>
 <div class="col-4 bg-white d-flex flex-column" id="main-chat">
@@ -49,7 +57,12 @@
         <div id="chat-messages" class="mb-3"></div>
     </div>
     <input type="text" id="message-input" class="form-control mb-2" placeholder="Введите ваше сообщение">
-    <button id="send-message" class="btn btn-primary mb-2">Отправить</button>
+    <div class="row">
+        <button id="send-message" class="btn btn-primary m-2  col-7">Отправить</button>
+        <button id="settings-button" class="btn btn-primary m-2">Настройки</button>
+        <button id="get-stats" class="btn btn-primary m-2">Статистика</button>
+    </div>
+    
 </div>
             
 
@@ -57,37 +70,79 @@
     
 <script>
 
- 
-
-
-
 // чат
 // На странице чата
 const socket = io();
-
+ 
 document.addEventListener("DOMContentLoaded", function () {
     const messageInput = document.getElementById("message-input");
     const sendMessageButton = document.getElementById("send-message");
     const chatMessages = document.getElementById("chat-messages");
+    const chatHistoryCheckbox = document.getElementById("chat-history");
 
-    // Получаем никнейм из параметров URL
     const urlSearchParams = new URLSearchParams(window.location.search);
     const nickname = urlSearchParams.get("nickname");
+    const room = "mapRoom";
+
+
+    document.getElementById('get-stats').addEventListener('click', function () {
+        socket.emit('getStats');
+    });
+
+
+     document.getElementById('settings-button').addEventListener('click', function () {
+        const settingsWindow = document.getElementById('settings');
+        if(settingsWindow.style.display === 'none') {
+            settingsWindow.style.display = 'block';
+        }
+        else {
+            settingsWindow.style.display = 'none'
+        }
+        
+    });
 
     sendMessageButton.addEventListener("click", function () {
         const message = messageInput.value;
         if (message.trim() !== "") {
-            // Отправляем сообщение и никнейм
-            socket.emit("sendMessage", { message, nickname });
+            // Отправляем сообщение, никнейм и room
+            console.log("Отправляю на сервер: " + message + " --- " + room);
+            socket.emit("sendMessage", { message, nickname, room });
             messageInput.value = "";
         }
     });
 
-    socket.on("receiveMessage", function (data) {
+    socket.on("receiveMessage", (data) => {
+
         const { nickname, message } = data;
+
         const messageElement = document.createElement("div");
         messageElement.textContent = `${nickname}: ${message}`;
+        
         chatMessages.appendChild(messageElement);
+    });
+
+    chatHistoryCheckbox.addEventListener('change', function() {
+    if (this.checked) {
+        socket.emit("requestChatHistory", { room });
+    }
+    else {
+        chatMessages.innerHTML = '';
+    }
+});
+
+    // Запрос истории чата при загрузке страницы
+    
+
+    socket.on("chatHistory", function (history) {
+        // Очистите текущий чат перед добавлением истории
+        chatMessages.innerHTML = '';
+
+        // Добавьте каждое сообщение из истории чата
+        history.forEach(item => {
+            const messageElement = document.createElement('div');
+            messageElement.textContent = `${item.nickname}: ${item.message}`;
+            chatMessages.appendChild(messageElement);
+        });
     });
 });
 
@@ -96,33 +151,55 @@ document.addEventListener("DOMContentLoaded", function () {
 // остальное
 
 document.addEventListener('DOMContentLoaded', () => {
-    const movingImage = document.getElementById('movingImage');
-    let posX = 0;
-    let posY = 0;
-    const step = 10; // Шаг перемещения в пикселях
+    const players = {
+        player1: { posX: 0, posY: 0 },
+        player2: { posX: 0, posY: 0 }
+    };
+
+    socket.emit('choiceChar');
+    let numChar = 0;
+    socket.on('yourChar', (temp) => {
+        numChar += temp;
+        console.log(numChar);
+    });
+
+    // Обработка события движения от сервера
+    socket.on('move', ({ player, posX, posY }) => {
+        // Обновление координат на всех клиентах
+        const playerElement = document.getElementById(player);
+        playerElement.style.left = `${posX}px`;
+        playerElement.style.top = `${posY}px`;
+    });
 
     document.addEventListener('keydown', (event) => {
+        const player = 'player' + numChar; // Здесь вы можете определить, какого игрока обрабатывать
+        const playerElement = document.getElementById(player);
+        const step = 10; // Шаг перемещения в пикселях
+
         switch (event.key) {
             case 'ArrowUp':
-                posY -= step;
+                players[player].posY -= step;
                 break;
             case 'ArrowDown':
-                posY += step;
+                players[player].posY += step;
                 break;
             case 'ArrowLeft':
-                posX -= step;
+                players[player].posX -= step;
                 break;
             case 'ArrowRight':
-                posX += step;
+                players[player].posX += step;
                 break;
         }
 
-        movingImage.style.left = `${posX}px`;
-        movingImage.style.top = `${posY}px`;
+        playerElement.style.left = `${players[player].posX}px`;
+        playerElement.style.top = `${players[player].posY}px`;
 
-        checkOverlap(posX, posY);
+        // Отправка координат на сервер
+        socket.emit('move', { player, posX: players[player].posX, posY: players[player].posY });
+        checkOverlap(players[player].posX, players[player].posY);
     });
 });
+
 
 const urlSearchParams1 = new URLSearchParams(window.location.search);
 const nickname = urlSearchParams1.get("nickname");

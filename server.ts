@@ -86,21 +86,24 @@ app.get("/", (req, res) => {
 })
 
 const players: { nick: string; chips: number; hand: { suit: string; rank: string }[]; socketId: string; actionDone: boolean }[] = [];
-
+const movePlayers: {socketId: string; numChar: number;}[] = [];
 const suits = ['♥', '♦', '♣', '♠'];
 const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'В', 'Д', 'К', 'Т'];
 let move: number;
 let totalBank: number;
 let tableCards: any;
-
+let totalPlayers = 0;
+const chatHistories = {};
+const chatRooms = {};
 // soket io
 const io = new Server(s);
+
 io.on("connection", (socket) => {
+  totalPlayers++;
   socket.on('getChips', async (nickname) => {
     try {
       // Ваш код для запроса к базе данных и получения количества фишек по никнейму
       const chips = await getChipsFromDatabase(nickname);
-      console.log("фишки" + chips);
       // Отправляем количество фишек обратно клиенту
       socket.emit('chipsUpdate', chips);
     } catch (error) {
@@ -109,7 +112,7 @@ io.on("connection", (socket) => {
   });
   // Обработчик события для установки никнейма
   socket.on("setNickname", async (nickname) => {
-    console.log(`User ${socket.id} set nickname: ${nickname}`);
+    console.log(`Пользователь ${socket.id} поставил никнейм: ${nickname}`);
 
     // Проверяем, существует ли никнейм
     const isExists = await isNicknameExists(nickname);
@@ -131,16 +134,24 @@ io.on("connection", (socket) => {
   });
 
   socket.on('joinGame', async (nickname) => {
+    if (players.length === 1) {
+      if (players[0].nick === nickname) {
+        socket.emit("changeNick");
+        return;
+      }
+    }
     if (players.length < 2) {
         const chips = await getChipsFromDatabase(nickname);
         const socketId = socket.id; 
         players.push({ nick: nickname, chips: chips, hand: [], socketId: socketId, actionDone: false });
         socket.emit('waitingForPlayer');
         if (players.length === 2) {
-            console.log("Game starting...");
+
             startGame();
         }
-    } else {
+    } 
+   
+    else {
         socket.emit('gameFull');
     }
 });
@@ -157,8 +168,14 @@ socket.on("loadGame", () => {
   }
 });
 
+socket.on("getStats", () => {
+  const connectedClients = io.sockets.sockets.size;
+  console.log("Подключено: " + connectedClients + " устройства.");
+  console.log("Уникальных подключений всего: " + totalPlayers);
+});
+
+
 socket.on('playerAction', ({ action, amount }) => {
-  console.log("ACTION MOVE " + move);
   const currentPlayer = players.find(player => player.socketId === socket.id);
   const socketId = socket.id; 
   if (action === 'fold') {
@@ -167,12 +184,9 @@ socket.on('playerAction', ({ action, amount }) => {
       endRound("fold", socketId);
   }
   if (action === 'call'){
-     console.log("call");
 
     currentPlayer!.chips -= amount;
     totalBank += amount;
-    console.log(totalBank);
-    console.log(currentPlayer!.chips);
    io.emit('updatePlayers', players);
     currentPlayer!.actionDone = true;
     
@@ -187,7 +201,6 @@ socket.on('playerAction', ({ action, amount }) => {
       if (checkAllPlayersActions()) {
         io.emit('showRiver');
         move += 1;
-        console.log("move 2 after emit: " + move );
         AllPlayersActionFalse()
     }
     }
@@ -210,7 +223,6 @@ socket.on('playerAction', ({ action, amount }) => {
 
   }
   if (action === 'check'){
-    console.log("check. Move " + move);
     currentPlayer!.actionDone = true;
     if (checkAllPlayersActions()) {
       if(move === 3){
@@ -246,11 +258,50 @@ socket.on('getPlayerDataRequest', () => {
   io.emit('playerDataResponse', players, totalBank);
 });
 
-  // Обработчик события для отправки сообщения
-  socket.on("sendMessage", (data) => {
-    const { message, nickname } = data;
-    io.emit("receiveMessage", { message, nickname });
-  });
+socket.on('choiceChar', () => {
+  const socketId = socket.id; 
+  if(movePlayers.length <= 0)
+  {
+    movePlayers.push({socketId: socketId, numChar: 1})
+    let temp = 1;
+    io.to(socketId).emit('yourChar', temp);
+  }
+  else {
+    movePlayers.push({socketId: socketId, numChar: 2})
+    let temp = 2;
+    io.to(socketId).emit('yourChar', temp);
+  }
+  
+});
+
+socket.on('move', (data) => {
+  // Отправка данных о движении всем подключенным клиентам, кроме отправителя
+  socket.broadcast.emit('move', data);
+});
+
+
+
+
+socket.on('sendMessage', (data) => {
+  const { message, room, nickname } = data;
+  socket.join(room);
+
+  const chatHistory = chatHistories[room] || [];
+
+  chatHistory.push({ nickname, message });
+
+  chatHistories[room] = chatHistory;
+ 
+  io.to(room).emit("receiveMessage", { nickname, message });
+});
+
+socket.on('requestChatHistory', (data) => {
+  const { room } = data;
+
+  const chatHistory = chatHistories[room] || [];
+
+  socket.emit('chatHistory', chatHistory);
+});
 
   socket.on("disconnect", () => {
     console.log(`User ${socket.id} disconnected`);
@@ -259,11 +310,10 @@ socket.on('getPlayerDataRequest', () => {
 
 function getRandomPlayer() {
   const randomIndex = Math.floor(Math.random() * players.length);
-  console.log("randomIndex: " + randomIndex);
   return players[randomIndex];
 }
 
-// Отправка сообщения конкретному случайному игроку
+
 
 
 function startGame() {
@@ -273,17 +323,17 @@ function startGame() {
   io.to(randomPlayer.socketId).emit('yourTurn', true);
   io.emit('startGame', players);
   const deck = shuffleDeck(createDeck());
-  // Раздаем карты игрокам
+
   dealCards(players, deck);
-  // Раздаем карты на стол
+
   tableCards = dealTableCards(deck, 5);
 
-  // Отправляем данные о картах игроков и на столе
+
   for (const player of players) {
       const playerCards = { hand: player.hand, tableCards };
       io.to(player.socketId).emit('dealCards', playerCards);
   }
-  // Добавьте логику раздачи карт и другие детали игры
+
 }
 
 
@@ -297,12 +347,12 @@ function createDeck(): { suit: string; rank: string }[] {
   return deck;
 }
 
-// Функция для перемешивания колоды
+
 function shuffleDeck(deck) {
   return deck.sort(() => Math.random() - 0.5);
 }
 
-// Раздача карт игрокам
+
 function dealCards(players, deck) {
   for (const player of players) {
       player.hand = [];
@@ -312,8 +362,7 @@ function dealCards(players, deck) {
   }
 }
 
-// Раздача карт на стол
-// Обновленная версия функции dealTableCards
+
 function dealTableCards(deck: { suit: string; rank: string }[], numCards: number) {
   const tableCards: { suit: string; rank: string }[] = [];
   for (let i = 0; i < numCards; i++) {
@@ -329,7 +378,7 @@ function endRound(action, socketIdWhoFolded) {
   let winner;
   let loser;
   if (action === 'fold') {
-    // Определите победителя как другого игрока
+
     winner = players.find(player => player.socketId !== socketIdWhoFolded);
     winner.chips += totalBank;
   }
@@ -347,14 +396,14 @@ function endRound(action, socketIdWhoFolded) {
     io.emit('endRound', "winner - " + winner.nick);
     updateChipsInDatabase();
   }
-
+  
 
 
   startGame();
 }
 
 async function updateChipsInDatabase() {
-  for(let i = 0; i <= players.length; i++){
+  for(let i = 0; i <= players.length - 1; i++){
     await connection.execute("UPDATE users SET chips = ? WHERE nickname = ?", [players[i].chips, players[i].nick]);
     console.log(players[i].nick + " обновлён успешно");
   }
@@ -363,42 +412,38 @@ async function updateChipsInDatabase() {
 
 function checkAllPlayersActions() {
   const allActionsDone = players.every(player => player.actionDone);
-
-  console.log("check all players actions: " + allActionsDone);
   return allActionsDone;
 }
 
 function AllPlayersActionFalse() {
-  console.log("обнуление ActionDone");
   for (const player of players) {
     player.actionDone = false;
   }
 }
 
-//Комбинации  
+
 function evaluateHand(hand) {
 
   console.log("Рука перед оценкой:", hand);
 
-// Сортировка руки по рангу
+
 hand.sort((a, b) => ranks.indexOf(a.rank) - ranks.indexOf(b.rank));
 
-// Подготовка данных для анализа
 const handSuits = hand.map(card => card.suit);
 const handRanks = hand.map(card => card.rank);
 const rankCounts = {};
 handRanks.forEach(rank => rankCounts[rank] = (rankCounts[rank] || 0) + 1);
 
-// Проверка на флеш
+
 const isFlush = handSuits.every((suit, _, arr) => suit === arr[0]);
 
-// Проверка на стрит
+
 let  isStraight = handRanks.every((rank, index, arr) => index === 0 || ranks.indexOf(rank) === ranks.indexOf(arr[index - 1]) + 1);
 if (handRanks.length >= 5) {
-  // Сортируем ранги в порядке возрастания
+
   const sortedRanks = handRanks.sort((a, b) => ranks.indexOf(a) - ranks.indexOf(b));
 
-  // Проверяем последовательность рангов
+
   for (let i = 0; i < sortedRanks.length - 4; i++) {
       const startRankIndex = ranks.indexOf(sortedRanks[i]);
       isStraight = sortedRanks.slice(i, i + 5).every((rank, index) => ranks.indexOf(rank) === startRankIndex + index);
@@ -406,20 +451,20 @@ if (handRanks.length >= 5) {
       if (isStraight) break;
   }
 
-  // Особый случай для стрита с тузом в качестве "1"
+
   if (!isStraight && sortedRanks.includes('Т')) {
       isStraight = ['2', '3', '4', '5', 'Т'].every(rank => sortedRanks.includes(rank));
   }
 }
 
-// Проверка на другие комбинации
+
 const hasPair = Object.values(rankCounts).includes(2);
 const hasTwoPairs = Object.values(rankCounts).filter(count => count === 2).length === 2;
 const hasThreeOfAKind = Object.values(rankCounts).includes(3);
 const hasFourOfAKind = Object.values(rankCounts).includes(4);
 const hasFullHouse = hasThreeOfAKind && hasPair;
 
-// Оценка руки
+
 let score = 0;
 if (isFlush && isStraight) {
   score = 8; // Стрит-флеш
@@ -444,11 +489,10 @@ return score;
 
 function determineWinner() {
 
-// Соединяем карты игрока и карты на столе, передаем в функцию оценки
 const playerHandValue = evaluateHand([...players[0].hand, ...tableCards]);
 const botHandValue = evaluateHand([...players[1].hand, ...tableCards]);
 
-// Логика определения победителя
+
 if (playerHandValue > botHandValue) {
   console.log("Игрок выиграл!");
   players[0].chips += totalBank;
