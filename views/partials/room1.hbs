@@ -31,8 +31,8 @@
 
 #playerHand2 {
     position: absolute;
-    bottom: 20%; /* Подогнать положение */
-    left: 30%;
+    bottom: 30%; /* Подогнать положение */
+    right: 20%;
     transform: translateX(-50%);
     display: flex; /* Расположить карты в ряд */
 }
@@ -90,8 +90,8 @@
 }
 #playerChips2 {
     position: absolute;
-    left: 30%;
-    bottom: 30%;
+    right: 20%;
+    bottom: 40%;
     transform: translateX(-50%);
 }
 
@@ -128,6 +128,20 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+}
+
+.cardEnemy {
+    border: 3px solid white; /* Обводка */
+    border-radius: 5px; /* Скругление углов */
+    padding: 5px;
+    text-align: center;
+    margin: 5px;
+    width: 50px; /* Фиксированная ширина */
+    height: 70px; /* Фиксированная высота */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background-color: gray;
 }
 
 .card-rank, .card-suit {
@@ -230,8 +244,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const chatMessages = document.getElementById("chat-messages");
     const chatHistoryCheckbox = document.getElementById("chat-history");
     const urlSearchParams = new URLSearchParams(window.location.search);
-const nickname = urlSearchParams.get("nickname");
- const room = "room1";
+    const nickname = urlSearchParams.get("nickname");
+    const room = "room1";
 
     document.getElementById('get-stats').addEventListener('click', function () {
         socket.emit('getStats');
@@ -293,7 +307,8 @@ const nickname = urlSearchParams.get("nickname");
 const suits = ['♥', '♦', '♣', '♠'];
 const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'В', 'Д', 'К', 'Т'];
 
-
+const urlSearchParams = new URLSearchParams(window.location.search);
+    const nickname = urlSearchParams.get("nickname");
 const tableCardsElement = document.getElementById('tableCards');
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -402,13 +417,21 @@ socket.on('dealCards', ({ hand, tableCards }) => {
     console.log('Dealing cards:', hand, tableCards);
 
     const playerHandElement = document.getElementById('playerHand1');
+    const playerEnemy = document.getElementById('playerHand2');
     playerHandElement.innerHTML = '';
+    playerEnemy.innerHTML = '';
 
 
     for (const card of hand) {
         const cardElement = document.createElement('div');
+        const cardEnemy = document.createElement('div');
+
         cardElement.innerText = `${card.rank}${card.suit}`;
+        cardElement.className = 'card';
+        cardEnemy.className = 'cardEnemy';
+
         playerHandElement.appendChild(cardElement);
+        playerEnemy.appendChild(cardEnemy);
     }
 
     
@@ -416,6 +439,7 @@ socket.on('dealCards', ({ hand, tableCards }) => {
     for (const card of tableCards) {
         const cardElement = document.createElement('div');
         cardElement.innerText = `${card.rank}${card.suit}`;
+        cardElement.className = 'card';
         tableCardsElement.appendChild(cardElement);
          cardElement.style.display = 'none';
     }
@@ -457,9 +481,17 @@ socket.on('showRiver', () => {
     }
 });
 
+const chatMessages = document.getElementById("chat-messages");
+
 socket.on('endRound', (result) => {
 
   console.log('Round ended:', result);
+
+  document.getElementById("checkButton").style.display = 'none';
+  const messageElement = document.createElement("div");
+        messageElement.textContent = result;
+        
+        chatMessages.appendChild(messageElement);
 
 });
 const buttons = document.querySelectorAll('.game-btn button');

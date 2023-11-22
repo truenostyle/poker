@@ -193,7 +193,7 @@ socket.on('playerAction', ({ action, amount }) => {
     if(move === 3){
       if (checkAllPlayersActions()) {
         endRound("call", socketId );
-        move += 1;
+        
         AllPlayersActionFalse()
     }
     }
@@ -228,7 +228,7 @@ socket.on('playerAction', ({ action, amount }) => {
       if(move === 3){
         if (checkAllPlayersActions()) {
           endRound("check", socketId );
-          move += 1;
+         
           AllPlayersActionFalse()
       }
       }
